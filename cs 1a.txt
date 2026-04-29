@@ -1,0 +1,146 @@
+﻿EXPERIMENT 1 a:  
+
+You have received a suspicious Windows executable file named suspicious.exe, Without 
+running it, identify unique patterns or signatures that could indicate its malware family or 
+type. Use an open-source tool to create rules or signatures that can help classify this file 
+among others. A basic generic YARA rule has already been created to detect common 
+Windows malware indicators such as process injection APIs and command execution strings. 
+
+Tool: YARA 
+
+Important Disclaimer: We will NOT use live malware binaries. That would be unsafe and 
+unethical. Instead, we use malware signatures embedded into test binaries. 
+
+The main goal is to 
+
+✓ Identify and classify a suspicious binary file WITHOUT executing it, 
+by using static patterns (strings, headers, APIs) and YARA rules. 
+
+✓  NOT infecting the system 
+
+✓  NOT running malware 
+
+✓ Only matching patterns 
+
+YARA is an open-source tool used to identify and classify malware based on 
+textual patterns, strings, and binary characteristics. 
+By performing static analysis, malware behavior can be inferred without running 
+the file, ensuring system safety. 
+What are we Analyzing: 
+
+We analyze binary files (mostly .exe) and look for: 
+
+• Malware-specific strings 
+
+• Windows API function names 
+
+• PE(Portable Executable) file headers  
+
+• Registry or command indicators 
+
+These indicators help us guess the malware type. 
+
+Why Yara Tool?? 
+
+
+
+YARA works like pattern matching: 
+
+“If this file contains these strings / structures, 
+then classify it as this type of malware.” 
+
+Procedure (Steps for performing experiment) 
+In Kali Linux VM 
+
+✓ Update and Upgrade 
+
+sudo apt update && sudo apt upgrade -y 
+
+✓ Install yara 
+
+sudo apt install yara -y 
+
+✓ yara version 
+
+yara  --version 
+
+	  
+
+1. Use a known test malware sample: 
+
+Creating Sample file 
+
+✓ Go to kali linux browser and search for EICAR.com  
+
+✓ In eicar website.. chose eicar.com and download the file. 
+
+✓ Make sure the contents of downloaded file paste in below exe file(sample.exe) 
+
+vi sample.exe 
+
+X5O!P%@AP[4\PZX54(P^)7CC)7}$EICAR-STANDARD-ANTIVIRUS-TEST-FILE!$H+H* 
+
+Save and Exit 
+
+Or  
+Create a new exe file 
+
+ echo "Student malware lab test: EICAR sample" > simple.exe 
+
+
+
+2. Then create yara rules: 
+
+Basic Yara Rules 
+
+vi   eicar_rule.yar 
+
+rule EICAR_Test_File 
+
+{ 
+
+    meta: 
+
+        author = "Lab Student" 
+
+        description = "Detects EICAR antivirus test file" 
+
+        reference = "Standard test signature" 
+
+    strings: 
+
+        $eicar_full = "EICAR-STANDARD-ANTIVIRUS-TEST-FILE" ascii wide nocase 
+
+        $eicar_part = “EICAR” ascii wide nocase 
+
+    condition: 
+
+    any of   ($eicar*) 
+
+} 
+
+3. Run: 
+
+yara   eicar_rule.yar   sample.exe 
+
+Then expected output looks like below 
+
+EICAR_Test_File eicar_sample.exe 
+
+Possible Results 
+
+• No output → benign PE (expected for nc.exe) 
+
+• Rule name printed → suspicious indicators found 
+
+Both results are valid for the experiment. 
+
+Result  
+
+• The suspicious binary contains known malware-related strings 
+
+
+
+• YARA rules successfully detected the file based on static signatures 
+
+• No execution of the file was required.
