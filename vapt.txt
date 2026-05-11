@@ -1,0 +1,195 @@
+Experiment 5 – XSS and CSRF using Burp Suite
+A) XSS (Cross Site Scripting) – Procedure
+1. Start both Kali Linux and Metasploitable2 virtual machines.
+2. Open the Firefox browser in Kali Linux.
+3. In the address bar, enter the IP address of Metasploitable2:
+http://192.168.x.x
+4. Open the DVWA (Damn Vulnerable Web Application) page.
+5. Login using:
+Username: admin
+Password: password
+6. From the left-side menu, click on XSS (Stored).
+7. In the Name field, enter:
+Test
+8. In the Message field, enter:
+HTML
+<script>alert("Hello This is XSS")</script>
+9. Click on Sign Guestbook.
+10. Navigate to another page and return to the XSS Stored page.
+11. Observe that the popup alert appears automatically every time the page loads.
+12. To display session cookies, enter the following payload:
+HTML
+<script>alert(document.cookie)</script>
+13. Click Sign Guestbook and observe the cookie value popup.
+14. Now click on XSS (Reflected) from the left-side menu.
+15. Enter the following payload:
+HTML
+<script>alert("hello")</script>
+16. Click Submit.
+Printed using ChatGPT to PDF, powered by PDFCrowd HTML to PDF API. 17/22
+17. Observe that the popup alert appears only once and disappears after refreshing or revisiting the
+page.
+vapt 5
+B) CSRF (Cross Site Request Forgery) – Procedure
+1. Login to DVWA using admin credentials.
+2. Set the DVWA security level to Low.
+3. Open Burp Suite in Kali Linux.
+4. In Burp Suite:
+Go to Proxy → Options
+Ensure the proxy listener is enabled on:
+127.0.0.1 : 8080
+5. Configure the Firefox browser proxy settings:
+Open Firefox Settings
+Search for “Proxy”
+Select Manual Proxy Configuration
+Set:
+HTTP Proxy: 127.0.0.1
+Port: 8080
+6. Import the Burp Suite CA certificate into Firefox.
+7. In DVWA, open the CSRF page.
+8. Enter a new password and confirm it.
+9. In Burp Suite, turn Intercept ON.
+10. Click the Change button in DVWA.
+11. Observe that Burp Suite captures the HTTP request.
+12. Right-click the intercepted request and select:
+Send to Repeater
+13. Click Forward to continue the request to the server.
+14. Open the Repeater tab in Burp Suite.
+15. Modify the password parameter value in the request.
+16. Click Send.
+17. Observe the successful password change response in the response section.
+18. Turn Intercept OFF.
+19. Logout from DVWA.
+20. Try logging in again using the old password.
+21. Observe that login fails because the password was changed successfully.
+vapt 5
+Printed using ChatGPT to PDF, powered by PDFCrowd HTML to PDF API. 18/22
+Experiment 6 – Password Cracking using Hydra
+Procedure
+1. Start both Kali Linux and Metasploitable2 virtual machines.
+2. Open the terminal in Kali Linux.
+3. Locate the password dictionary file using:
+Bash
+locate unix_passwords.txt
+4. Open the wordlist file:
+Bash
+vi /opt/metasploit-framework/embedded/framework/data/wordlists/unix_passwords.txt
+5. Add the following password entry if it is not already present:
+msfadmin
+6. Save and close the file.
+7. Run the Hydra password cracking command:
+Bash
+hydra -l msfadmin -P /opt/metasploit-
+framework/embedded/framework/data/wordlists/unix_passwords.txt ftp://192.168.x.x
+8. Wait for Hydra to perform the dictionary attack.
+9. Observe the matched username and password displayed in the terminal.
+10. Connect to the target machine using FTP:
+Bash
+ftp 192.168.x.x
+11. Enter the username:
+msfadmin
+12. Enter the cracked password.
+13. Use FTP commands to navigate through directories:
+Bash
+ls
+cd vulnerable
+get filename
+14. To access the target machine using SSH, execute:
+Bash
+ssh -o HostKeyAlgorithms=+ssh-rsa,ssh-dss msfadmin@192.168.x.x
+15. Enter the password and access the target machine successfully.
+vapt 6,7
+Printed using ChatGPT to PDF, powered by PDFCrowd HTML to PDF API. 19/22
+Experiment 7 – DoS Attack using Hping3
+A) Ping Flood Attack – Procedure
+1. Start both Kali Linux and Ubuntu virtual machines.
+2. Open the terminal in Kali Linux.
+3. Verify network connectivity using:
+Bash
+ping 192.168.x.x
+4. Open Wireshark in Ubuntu and start packet capture.
+5. Install Snort IDS in Ubuntu:
+Bash
+sudo apt-get install snort -y
+6. Start Snort in console mode:
+Bash
+sudo snort -A console -c /etc/snort/snort.conf
+7. Open another terminal in Kali Linux.
+8. Run the Hping3 ICMP flood command:
+Bash
+sudo hping3 -1 --faster 192.168.x.x
+9. Observe a large number of ICMP packets in Wireshark.
+10. Observe packet flood alerts in the Snort console window.
+vapt 6,7
+B) SYN Flood Attack – Procedure
+1. Start both Kali Linux and Metasploitable2 virtual machines.
+2. Open Firefox browser in Kali Linux.
+3. Launch the DVWA application using the Metasploitable2 IP address.
+4. Login using:
+Username: admin
+Password: password
+5. Open Wireshark and start packet capture.
+6. Open the terminal in Kali Linux.
+7. Execute the SYN flood command:
+Bash
+sudo hping3 -S --flood -p 80 192.168.x.x
+8. Observe continuous SYN packets being sent to port 80.
+Printed using ChatGPT to PDF, powered by PDFCrowd HTML to PDF API. 20/22
+9. In Wireshark, observe the TCP SYN flood traﬃc.
+10. Observe that the DVWA application becomes slow or unresponsive due to the flood attack.
+vapt 6,7
+Experiment 8 – Intrusion Detection System using Snort
+Procedure
+1. Start both Ubuntu and Kali Linux virtual machines.
+2. Open the terminal in Ubuntu.
+3. Install Snort:
+Bash
+sudo apt-get install snort
+4. Check the network interface details:
+Bash
+/sbin/route -n
+5. Open the Snort configuration file:
+Bash
+sudo vi /etc/snort/snort.conf
+6. Navigate to the rules directory:
+Bash
+cd /etc/snort/rules
+7. Open the local rules file:
+Bash
+vi local.rules
+8. Add the ICMP detection rule:
+Bash
+alert icmp $EXTERNAL_NET any -> $HOME_NET any (msg:"Varsha"; sid:5889; rev:1;)
+9. Add the FTP detection rule:
+Bash
+alert tcp any any -> $HOME_NET 21 (msg:"FTP attempted"; sid:60001; rev:1;)
+10. Add the SSH detection rule:
+Bash
+alert tcp any any -> $HOME_NET 22 (msg:"SSH attempted"; sid:600022; rev:1;)
+11. Save and close the file.
+12. Test the Snort configuration:
+Bash
+sudo snort -T -c /etc/snort/snort.conf
+Printed using ChatGPT to PDF, powered by PDFCrowd HTML to PDF API. 21/22
+13. Start Snort in console mode:
+Bash
+sudo snort -A console -c /etc/snort/snort.conf
+14. Open the terminal in Kali Linux.
+15. Perform an Nmap scan:
+Bash
+nmap 192.168.x.x
+16. Observe reconnaissance detection alerts in Snort.
+17. Ping the Ubuntu machine:
+Bash
+ping 192.168.x.x
+18. Observe ICMP alert messages in Snort.
+19. Attempt FTP connection:
+Bash
+ftp 192.168.x.x
+20. Observe FTP detection alerts in Snort.
+21. Attempt SSH connection:
+Bash
+ssh ubuntu@192.168.x.x
+22. Observe SSH detection alerts displayed in the Snort console.
+vapt 8
+Printed using ChatGPT to PDF, powered by PDFCrowd HTML to PDF API. 22/22
